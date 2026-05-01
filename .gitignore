@@ -15,3 +15,7 @@ Thumbs.db
 
 # Testcontainers configurations
 testcontainers.properties
+
+/data
+*.zip
+/tools
