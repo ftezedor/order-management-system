@@ -1,0 +1,17 @@
+# Target files
+target/
+*.class
+
+# IDE configurations
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Testcontainers configurations
+testcontainers.properties

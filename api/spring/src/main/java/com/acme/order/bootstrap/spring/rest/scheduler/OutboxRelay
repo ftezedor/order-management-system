@@ -1,0 +1,74 @@
+package com.acme.order.bootstrap.spring.rest.scheduler;
+
+import com.acme.order.domain.event.OrderCreatedEvent;
+import com.acme.order.infrastructure.messaging.RabbitMqOrderPublisher;
+import com.acme.order.infrastructure.persistence.outbox.OutboxEntity;
+import jakarta.persistence.EntityManager;
+import java.util.List;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
+
+
+@Component
+public class OutboxRelay {
+
+    private final EntityManager entityManager;
+    private final RabbitMqOrderPublisher rabbitPublisher;
+
+    public OutboxRelay(EntityManager entityManager, RabbitMqOrderPublisher rabbitPublisher) {
+        this.entityManager = entityManager;
+        this.rabbitPublisher = rabbitPublisher;
+    }
+
+    @Scheduled(fixedDelay = 5000) // Runs every 5 seconds
+    @Transactional
+    public void publishEvents() {
+        this.pickupEvents();
+    }
+
+    private void pickupEvents() {
+        // 1. Find unprocessed events
+        List<OutboxEntity> events = entityManager.createQuery(
+            "SELECT o FROM OutboxEntity o WHERE o.processed = false", OutboxEntity.class)
+            .setMaxResults(10)
+            .getResultList();
+
+        for (OutboxEntity event : events) {
+            try {
+                // 2. Publish to RabbitMQ
+                // (Note: You might need to update your publisher to accept the JSON string directly)
+                rabbitPublisher.handle(event);
+                
+                // 3. Mark as processed
+                event.setProcessed(true);
+            } catch (Exception e) {
+                // If RabbitMQ is down, we don't set processed=true. 
+                // It will be retried in 5 seconds!
+                break; 
+            }
+        }
+    }
+
+    @Async // Runs in a separate thread so it can start its own transaction
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @Transactional(propagation = Propagation.REQUIRES_NEW) // Start a fresh transaction
+    public void onTransactionCommit(OrderCreatedEvent event) {
+        // Trigger the RabbitMQ send IMMEDIATELY now that we know 
+        // the data is safe in the DB.
+        this.pickupEvents();
+    }
+    
+    /*
+    @Scheduled(fixedDelay = 10000)
+    public void backupPolling() {
+        // This still runs every 10s just in case the app crashed 
+        // right after a commit but before the relay finished.
+        this.pickupEvents();
+    }
+    */
+}

@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Debug OrderApplication",
+      "request": "launch",
+      "mainClass": "com.acme.order.bootstrap.spring.OrderApplication",
+      "projectName": "order-bootstrap-spring",
+      "cwd": "${workspaceFolder}/api/spring"
+    }
+  ]
+}
