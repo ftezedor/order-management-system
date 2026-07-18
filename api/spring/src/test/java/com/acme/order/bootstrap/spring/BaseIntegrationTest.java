@@ -11,33 +11,38 @@ import org.testcontainers.utility.DockerImageName;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
-public abstract class BaseIntegrationTest {
+public abstract class BaseIntegrationTest
+{
 
     @SuppressWarnings("resource")
     @Container
-    protected static final PostgreSQLContainer<?> postgresContainer = 
-        new PostgreSQLContainer<>("postgres:16-alpine")
-            .withDatabaseName("test-orders")
-            .withUsername("test-user")
-            .withPassword("test-password");
+    protected static final PostgreSQLContainer<?> postgresContainer = new PostgreSQLContainer<>("postgres:16-alpine")
+            .withDatabaseName("test-orders").withUsername("test-user").withPassword("test-password")
+            .withInitScript("init.sql");
 
     @SuppressWarnings("resource")
     @Container
-    protected static final RabbitMQContainer rabbitmqContainer = 
-        new RabbitMQContainer(DockerImageName.parse("rabbitmq:3.13-management"));
+    protected static final RabbitMQContainer rabbitmqContainer = new RabbitMQContainer(
+            DockerImageName.parse("rabbitmq:3.13-management"));
 
     // Static block to ensure the container is fully running and ports are mapped
-    static {
+    static
+    {
         rabbitmqContainer.start();
     }
 
     @DynamicPropertySource
-    static void registerProperties(DynamicPropertyRegistry registry) {
+    static void registerProperties(DynamicPropertyRegistry registry)
+    {
         // PostgreSQL Properties
         registry.add("spring.datasource.url", postgresContainer::getJdbcUrl);
         registry.add("spring.datasource.username", postgresContainer::getUsername);
         registry.add("spring.datasource.password", postgresContainer::getPassword);
+
         registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
+        registry.add("spring.jpa.show-sql", () -> "true");
+        registry.add("spring.jpa.properties.hibernate.format_sql", () -> "true");
+        registry.add("spring.jpa.properties.hibernate.dialect", () -> "org.hibernate.dialect.PostgreSQLDialect");
 
         // RabbitMQ Properties
         registry.add("spring.rabbitmq.host", rabbitmqContainer::getHost);

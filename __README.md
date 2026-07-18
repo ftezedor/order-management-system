@@ -1,12 +1,13 @@
+
 # Order Management System
 
-> **Production-grade Java 21 backend** demonstrating enterprise software architecture using **Hexagonal Architecture**, **Clean Architecture**, a **framework-independent domain**, **Transactional Outbox Pattern**, **RabbitMQ**, **PostgreSQL**, **distributed tracing**, and **production-ready observability**.
+> **Production-grade Java 21 backend** demonstrating enterprise software architecture with **Hexagonal Architecture**, **Clean Architecture**, **DDD principles**, **Transactional Outbox Pattern**, **RabbitMQ**, **PostgreSQL**, **distributed tracing**, and **production-ready observability**.
 
-> This repository serves as an **engineering showcase** and **reference implementation** of modern backend design practices rather than a feature-rich business application.
+> This repository is an **engineering showcase**. Its primary goal is to demonstrate architectural decisions and backend engineering practices commonly adopted in production systems rather than implementing a feature-rich business application.
 
 ---
 
-![Java](docs/images/badges/java.png)&nbsp;&nbsp;&nbsp;![Spring](docs/images/badges/springboot.png)&nbsp;&nbsp;&nbsp;![PostgreSQL](docs/images/badges/postgres.png)&nbsp;&nbsp;&nbsp;![RabbitMQ](docs/images/badges/rabbitmq.png)
+![Java](docs/images/badges/java.png) &nbsp; &nbsp; &nbsp; &nbsp; ![Spring](docs/images/badges/springboot.png) &nbsp; &nbsp; &nbsp; &nbsp; ![Postgres](docs/images/badges/postgres.png) &nbsp; &nbsp; &nbsp; &nbsp; ![RabbitMQ](docs/images/badges/rabbitmq.png)
 
 ---
 
@@ -16,16 +17,14 @@ This repository demonstrates how a modern Java backend can be designed using ent
 
 The application exposes a REST API for managing customer orders while serving as a reference implementation of framework-independent business logic, event-driven communication, and operational excellence.
 
-Instead of emphasizing business complexity, the project focuses on architectural quality, maintainability, observability and long-term evolvability.
-
 ---
 
 # Table of Contents
 
 - Why this project exists
 - Architecture at a Glance
-- Architecture
-- Architectural Decisions
+- Architecture Diagrams
+- Design Principles
 - Technology Stack
 - Engineering Features
 - Project Structure
@@ -35,29 +34,40 @@ Instead of emphasizing business complexity, the project focuses on architectural
 - Testing Strategy
 - Roadmap
 - Design Goals
+- Contributing
 - License
 
 ---
 
 # Why this project exists
 
-Many public Spring Boot examples demonstrate framework usage but rarely showcase production-oriented architectural decisions.
+Most public Spring Boot examples are CRUD-oriented and tightly coupled to the framework.
 
-This project explores how business logic can remain independent from infrastructure while preserving clear architectural boundaries, high testability and operational readiness.
+This project explores how a production-oriented backend can remain:
 
-The business domain is intentionally simple so the engineering decisions remain the primary focus.
+- framework-independent
+- highly testable
+- maintainable
+- observable
+- event-driven
+- easy to evolve
+
+The business domain is intentionally simple so the focus stays on software architecture and engineering quality.
 
 ---
 
 # Architecture at a Glance
 
-- Hexagonal (Ports & Adapters) Architecture
+- Hexagonal Architecture
 - Clean Architecture
 - Framework-independent Domain
 - Explicit Application Use Cases
 - Dependency Inversion
 - Transactional Outbox Pattern
-- Event-driven Communication
+- Event-driven Messaging
+- Distributed Tracing
+- Production Observability
+- Integration Testing with Testcontainers
 
 ---
 
@@ -81,7 +91,7 @@ Application --> Domain
 Application --> Ports
 Ports --> PostgreSQL[(PostgreSQL)]
 Ports --> RabbitMQ[(RabbitMQ)]
-Ports --> Outbox[(Outbox)]
+Ports --> Outbox[(Transactional Outbox)]
 Ports --> Metrics[(Micrometer)]
 Ports --> Tracing[(Zipkin)]
 ```
@@ -100,49 +110,62 @@ participant RabbitMQ
 
 Client->>API: POST /orders
 API->>UseCase: Create Order
-UseCase->>Repository: Persist Aggregate
-Repository->>DB: Save
+UseCase->>Repository: Save Aggregate
+Repository->>DB: Persist
 Repository->>Outbox: Persist Event
 Outbox->>RabbitMQ: Publish Event
 API-->>Client: 201 Created
 ```
 
-## Deployment
+---
 
-> **TODO:** Add Docker Compose deployment diagram.
+# Design Principles
 
-![Deployment](docs/images/deployment_diagram.png)
+- Hexagonal Architecture
+- Clean Architecture
+- SOLID
+- Dependency Inversion
+- Explicit Use Cases
+- Framework-independent Domain
+- Event-driven Integration
+- Production-first Observability
 
 ---
 
 # Architectural Decisions
 
 ## Why Hexagonal Architecture?
-Business rules remain isolated from infrastructure.
 
-## Why a Framework-independent Domain?
-Business logic should not depend on Spring or persistence frameworks.
+Separates business rules from infrastructure concerns.
+
+## Why Framework-independent Domain?
+
+Business logic should not depend on Spring, JPA or infrastructure frameworks.
 
 ## Why Transactional Outbox?
-Reliable event publication without dual-write inconsistencies.
+
+Prevents dual-write inconsistencies between the database and message broker.
 
 ## Why RabbitMQ?
-Loose coupling through asynchronous messaging.
+
+Enables asynchronous communication and loose coupling.
 
 ## Why Micrometer?
-Vendor-neutral metrics and monitoring.
+
+Provides vendor-neutral metrics.
 
 ## Why Testcontainers?
-Integration tests execute against real infrastructure.
+
+Runs integration tests against real infrastructure.
 
 ## Architecture Decision Records
 
 | ADR | Status | Description |
 |-----|:------:|-------------|
-| [ADR-0001](docs/adr/0001-hexagonal.md) | ✅ | Hexagonal Architecture |
-| [ADR-0002](docs/adr/0002-outbox.md) | ✅ | Transactional Outbox |
-| [ADR-0003](docs/adr/0003-observability.md) | ✅ | Observability Strategy |
-| [ADR-0004](docs/adr/0004-testing.md) | ✅ | Integration Testing |
+| [ADR-0001](docs/adr/0001-hexagonal.md) | ✅ Accepted | Adopt Hexagonal Architecture |
+| [ADR-0002](docs/adr/0002-outbox.md) | ✅ Accepted | Adopt the Transactional Outbox Pattern |
+| [ADR-0003](docs/adr/0003-observability.md) | ✅ Accepted | Production-first Observability |
+| [ADR-0004](docs/adr/0004-testing.md) | ✅ Accepted | Integration Testing with Testcontainers |
 
 ---
 
@@ -152,11 +175,12 @@ Integration tests execute against real infrastructure.
 |----------|------------|
 | Language | Java 21 |
 | Framework | Spring Boot |
-| Persistence | PostgreSQL |
+| Database | PostgreSQL |
 | Messaging | RabbitMQ |
+| Documentation | OpenAPI |
 | Metrics | Micrometer |
 | Tracing | Zipkin |
-| Documentation | OpenAPI |
+| Health | Spring Boot Actuator |
 | Testing | JUnit + Testcontainers |
 | Containers | Docker |
 
@@ -164,15 +188,20 @@ Integration tests execute against real infrastructure.
 
 # Engineering Features
 
-- REST API
-- OpenAPI Documentation
+- Framework-independent Domain
+- Hexagonal Architecture
+- Clean Architecture
+- REST APIs
 - Bean Validation
-- Health Checks
+- Transactional Outbox
+- RabbitMQ Integration
 - Distributed Tracing
 - Structured Logging
-- Correlation IDs (MDC)
-- Integration Testing
-- Dockerized Execution
+- Correlation IDs
+- OpenAPI
+- Testcontainers
+- Docker
+- Health Checks
 
 ---
 
@@ -190,15 +219,13 @@ src
 
 # Observability
 
-Operational visibility is provided through:
+Supported through:
 
 - Spring Boot Actuator
-- Micrometer Metrics
+- Micrometer
 - Prometheus
-- Zipkin Distributed Tracing
+- Zipkin
 - MDC Correlation IDs
-
-> **TODO:** Add screenshots for Swagger, RabbitMQ, Zipkin, Prometheus and Grafana.
 
 ---
 
@@ -210,7 +237,7 @@ Operational visibility is provided through:
 - Maven
 - Docker
 
-## Start infrastructure
+## Start Infrastructure
 
 ```bash
 docker compose up -d
@@ -239,13 +266,11 @@ mvn spring-boot:run -pl api/spring
 | GET | /actuator/prometheus | Metrics |
 | GET | /actuator/health | Health |
 
-![Swagger UI](docs/images/swagger-ui.png)
+![Swagger-ui](docs/images/swagger-ui.png)
 
 ---
 
 # Testing Strategy
-
-Testing follows a layered approach:
 
 - Unit Tests
 - Integration Tests
@@ -263,8 +288,9 @@ mvn test
 
 - [x] Hexagonal Architecture
 - [x] Clean Architecture
+- [x] RabbitMQ
 - [x] Transactional Outbox
-- [x] RabbitMQ Integration
+- [x] OpenAPI
 - [x] Docker
 - [x] Testcontainers
 - [ ] GitHub Actions
@@ -279,21 +305,20 @@ mvn test
 
 # Design Goals
 
-The project prioritizes:
+This project intentionally prioritizes:
 
 - Maintainability
 - Scalability
-- Explicit architectural boundaries
-- Framework independence
-- Production observability
-- Reliable messaging
-- High testability
+- Architectural boundaries
+- Observability
+- Testability
 - Long-term evolvability
 
-instead of maximizing feature count.
+rather than feature count.
 
 ---
 
 # License
 
 GPL v2 Only
+

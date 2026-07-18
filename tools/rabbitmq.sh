@@ -9,7 +9,7 @@
 # zipkin - http://localhost:9411/zipkin/?lookback=15m&endTs=1777520959144&limit=10
 #
 #docker run -d -p 9411:9411 openzipkin/zipkin    # create zipkin container
-docker start jolly_mirzakhani                   # start zipkin container already created
+#docker start zipkin                   # start zipkin container already created
 
 #####
 #
@@ -26,4 +26,4 @@ docker start rabbitmq
 #
 #  postgres:postgres
 #
-docker start crazy_roentgen
+docker start postgres
